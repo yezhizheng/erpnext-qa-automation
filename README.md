@@ -42,3 +42,42 @@ C:\Users\levi\AppData\Local\Programs\Python\Python312\python.exe -m pytest -q --
 
 默认账号配置见 `config/config.py`，可用 `ERPNEXT_BASE_URL`、`ERPNEXT_USERNAME`、`ERPNEXT_PASSWORD` 环境变量覆盖。公开仓库中不要提交真实生产凭据。
 
+## 接口自动化测试 (API Automation)
+
+项目使用 **Requests + Pytest** 实现独立于 UI 的 ERPNext REST API 自动化：
+
+- 基于 `requests.Session` 调用 Frappe 登录接口，统一维护 Session Cookie。
+- 自动创建 Customer、Item 等前置数据，避免依赖人工预置数据。
+- 覆盖 Sales Order 正向创建、负数金额和非法日期等后端业务校验。
+- 提供销售发票数据构造脚本，生成跨月份、草稿/已提交、CNY/USD 汇率及退货负数数据。
+- 调用 Sales Analytics 报表接口，验证月度聚合、草稿过滤、币种换算和负数冲销结果。
+
+安装依赖后，只运行 API 测试：
+
+```bash
+pip install -r requirements.txt
+pytest api/ -m api -v
+```
+
+生成 HTML 测试报告：
+
+```bash
+pip install pytest-html
+pytest api/ -m api -v --html=reports/api_report.html --self-contained-html
+```
+
+构造 Sales Analytics 测试数据前，请在不会提交到 Git 的 `.env` 中配置：
+
+```dotenv
+ERPNEXT_BASE_URL=http://localhost:8080
+ERPNEXT_USERNAME=your_test_user
+ERPNEXT_PASSWORD=your_test_password
+ERPNEXT_CUSTOMER_NAME=API Test Customer
+```
+
+然后执行：
+
+```bash
+python scripts/seed_sales_invoice_analytics.py
+```
+
